@@ -7,7 +7,7 @@ con cómo se comprueba cada uno en este proyecto. Marca la casilla cuando lo vea
 
 Sin AWS y sin gastar tokens.
 
-- [ ] `uv run pytest -q` termina sin `failed` ni `xfailed` (236 pruebas, sin Groq).
+- [ ] `uv run pytest -q` termina sin `failed` ni `xfailed` (268 pruebas, sin Groq).
 - [ ] `uv run python -m backend.seguridad.ejemplos_owasp` muestra las 20 filas de OWASP 2026
       con su evidencia ([mapa](mapa-owasp-2026.md)).
 - [ ] `uv run python -m backend.observabilidad.reporte` muestra latencia, tokens y tasa de error.
@@ -29,6 +29,7 @@ Sin AWS y sin gastar tokens.
 
 ## Seguridad de la app (OWASP LLM 2026)
 
+- [ ] El chat pide sesión (401 sin ella); el correo no se repite (409); un token alterado no sirve (`tests/test_usuarios.py`).
 - [ ] Prompt injection bloqueado en el mensaje **y en el historial** (`tests/test_api.py`, `tests/test_evasiones.py`).
 - [ ] Rate limiting devuelve **429** al exceder el límite (8 por minuto por IP; cupos del público; freno de 120 peticiones/min).
 - [ ] La salida del modelo se muestra escapada (`escapar()` en `frontend/chat.js`) y la CSP impide scripts inyectados.

@@ -1,0 +1,24 @@
+# Microservicio de usuarios: imagen chica (sin torch ni modelos), usuario no-root.
+# Contexto de build: la raíz del repo (como la app), pero solo copia usuarios/.
+FROM python:3.13-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+
+# Mismas versiones que uv.lock usa para la app.
+RUN pip install --no-cache-dir "fastapi==0.162.0" "starlette==1.10.0" "pydantic==2.14.2" "uvicorn[standard]==0.54.0"
+
+COPY usuarios ./usuarios
+
+# La base (usuarios.db) va en un volumen propio montado en /app/data.
+RUN useradd --create-home --uid 10001 appuser && mkdir -p data && chown appuser data
+USER appuser
+ENV USUARIOS_DB=/app/data/usuarios.db
+
+EXPOSE 8001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/usuarios/health')" || exit 1
+
+# Igual que la app: X-Forwarded-For solo se cree si viene de Caddy (límites por IP reales).
+ENV FORWARDED_ALLOW_IPS=127.0.0.1
+CMD ["sh", "-c", "exec uvicorn usuarios.app:app --host 0.0.0.0 --port 8001 --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\""]

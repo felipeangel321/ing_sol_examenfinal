@@ -24,6 +24,8 @@ import os
 
 from fastapi import HTTPException, Request
 
+from backend.seguridad.sesion import es_corredor, usuario_actual
+
 COOKIE = "acceso"
 LARGO_MINIMO = 24  # una clave más corta se ignora: mejor sin dueño que con clave débil
 
@@ -51,6 +53,9 @@ def es_dueno(request: Request) -> bool:
 
 
 def exigir_dueno(request: Request) -> None:
-    """Dependencia para el panel y /metricas: solo el dueño, si hay clave configurada."""
+    """Dependencia para el panel y /metricas: el dueño (link secreto) o una cuenta con rol
+    corredor (microservicio de usuarios). Sin clave configurada (local) queda abierto."""
+    if es_corredor(usuario_actual(request)):
+        return
     if clave_configurada() and not es_dueno(request):
         raise HTTPException(status_code=403, detail="Solo el administrador de la demo puede ver el panel.")

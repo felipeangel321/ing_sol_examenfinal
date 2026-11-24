@@ -73,6 +73,20 @@
   .pie { display: flex; justify-content: space-between; gap: 12px; max-width: 900px; margin: 8px auto 0; font-size: 12px; color: var(--tinta-suave); flex-wrap: wrap; }
   .pie label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 
+  /* Inicio de sesión (microservicio de usuarios) */
+  .acceso { display: grid; place-items: center; min-height: calc(100vh - 61px); padding: 24px; }
+  .tarjeta-acceso { width: 100%; max-width: 380px; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); box-shadow: var(--sombra); padding: 24px; }
+  .tarjeta-acceso h1 { font-size: 18px; margin: 0 0 4px; }
+  .tarjeta-acceso p.sub { margin: 0 0 16px; font-size: 13px; color: var(--tinta-2); }
+  .pestanas { display: flex; gap: 4px; margin-bottom: 16px; background: var(--superficie-2); border-radius: 10px; padding: 4px; }
+  .pestana { flex: 1; border: 0; background: transparent; padding: 8px; border-radius: 8px; cursor: pointer; color: var(--tinta-2); }
+  .pestana[aria-selected="true"] { background: var(--superficie); color: var(--tinta); box-shadow: var(--sombra); font-weight: 600; }
+  .campo { display: grid; gap: 4px; font-size: 13px; color: var(--tinta-2); margin-bottom: 12px; }
+  .campo input { padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--plano); color: var(--tinta); }
+  .acceso-error { min-height: 18px; margin: 0 0 10px; font-size: 13px; color: var(--critico); }
+  .tarjeta-acceso .boton.primario { width: 100%; }
+  .usuario { font-size: 13px; color: var(--tinta-2); align-self: center; }
+
   @media (max-width: 760px) {
     .app { grid-template-columns: 1fr; height: calc(100vh - 57px); }
     .lateral { display: none; }
@@ -89,10 +103,33 @@
     <div>Asistente de seguros<small>Resuelve dudas con las pólizas y prepara tu solicitud</small></div>
   </div>
   <nav class="enlaces">
+    <span class="usuario oculto" id="usuario"></span>
     <button class="boton" id="nueva" type="button">Nueva conversación</button>
     <a class="boton" href="panel.html">Panel</a>
+    <button class="boton oculto" id="salir" type="button">Salir</button>
   </nav>
 </header>
+
+<section class="acceso oculto" id="acceso" aria-labelledby="acceso-titulo">
+  <div class="tarjeta-acceso">
+    <h1 id="acceso-titulo">Ingresa para usar el asistente</h1>
+    <p class="sub">Tu cuenta guarda tu cupo de consultas del día.</p>
+    <div class="pestanas" role="tablist">
+      <button class="pestana" id="tab-entrar" type="button" role="tab" aria-selected="true">Iniciar sesión</button>
+      <button class="pestana" id="tab-registro" type="button" role="tab" aria-selected="false">Crear cuenta</button>
+    </div>
+    <form id="form-acceso" novalidate>
+      <label class="campo oculto" id="campo-nombre">Nombre
+        <input id="acceso-nombre" autocomplete="name" maxlength="80"></label>
+      <label class="campo">Correo
+        <input id="acceso-correo" type="email" autocomplete="email" maxlength="170" required></label>
+      <label class="campo">Contraseña
+        <input id="acceso-contrasena" type="password" autocomplete="current-password" minlength="8" maxlength="128" required></label>
+      <p class="acceso-error" id="acceso-error" role="alert"></p>
+      <button class="boton primario" id="acceso-enviar" type="submit">Iniciar sesión</button>
+    </form>
+  </div>
+</section>
 
 <div class="app">
   <aside class="lateral">

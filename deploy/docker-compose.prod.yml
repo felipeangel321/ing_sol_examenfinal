@@ -1,4 +1,5 @@
-# Despliegue mínimo: caddy (HTTPS) -> app (API + chat + panel).
+# Despliegue: caddy (HTTPS) -> app (API + chat + panel) y usuarios (registro + login).
+# Cada servicio tiene su propia base: la app, conversaciones/solicitudes; usuarios, usuarios.db.
 # Basado en deploy/ del repo del curso. Solo caddy publica puertos; la app queda
 # en la red interna y no se puede llamar directo desde Internet.
 #
@@ -21,6 +22,9 @@ services:
       # Cuenta: cada pregunta gasta ~7.000 tokens (2-3 llamadas de ~2.200) y el plan
       # gratuito da 200.000 por día -> ~28. Con 25 queda margen para la demo.
       TOPE_DIARIO_PREGUNTAS: "${TOPE_DIARIO_PREGUNTAS:-25}"
+      # El chat pide sesión del microservicio de usuarios, que aquí corre aparte.
+      EXIGIR_LOGIN: "${EXIGIR_LOGIN:-true}"
+      USUARIOS_EMBEBIDO: "false"
     expose: ["8000"]
     volumes:
       # Conversaciones, solicitudes y bóveda (SQLite) + trazas del panel:
@@ -33,17 +37,36 @@ services:
         limits: { cpus: "1.5", memory: 2500M }
     networks: [interna]
 
+  usuarios:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.usuarios
+    restart: unless-stopped
+    env_file: [.env]        # JWT_SECRETO (compartida con la app) y la cuenta del corredor
+    environment:
+      FORWARDED_ALLOW_IPS: "172.28.0.10"
+      ENABLE_DOCS: "${ENABLE_DOCS:-false}"
+    expose: ["8001"]
+    volumes:
+      - usuarios_datos:/app/data   # usuarios.db: sobrevive a reinicios y a reconstruir
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+    networks: [interna]
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     environment:
       SITE_ADDRESS: "${SITE_ADDRESS:-localhost}"
+      # La IP sola (sin https://): certificado por defecto para quien entra por IP.
+      SITE_IP: "${SITE_IP:-localhost}"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [app]
+    depends_on: [app, usuarios]
     networks:
       interna:
         # IP fija: la app necesita saber de qué origen exacto creerle X-Forwarded-For.
@@ -58,6 +81,7 @@ networks:
 
 volumes:
   datos:
+  usuarios_datos:
   trazas:
   caddy_data:
   caddy_config:

@@ -56,8 +56,11 @@ if ! sudo docker compose version >/dev/null 2>&1; then
 fi
 
 echo ">> 3/5 Instalando docker buildx (compose lo necesita para construir la imagen)..."
-if ! sudo docker buildx version >/dev/null 2>&1; then
-  VERSION="$(curl -fsSL https://api.github.com/repos/docker/buildx/releases/latest | grep -m1 '"tag_name"' | cut -d '"' -f 4)"
+# Amazon Linux 2023 trae buildx 0.12 y compose exige 0.17 o más: no basta con que exista.
+# El de /usr/local/lib/docker/cli-plugins tiene prioridad sobre el del sistema.
+BUILDX="$(sudo docker buildx version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -n 1 || true)"
+if [ -z "$BUILDX" ] || { [ "${BUILDX%%.*}" -eq 0 ] && [ "${BUILDX#*.}" -lt 17 ]; }; then
+  VERSION="$(curl -fsSL https://api.github.com/repos/docker/buildx/releases/latest | grep -m1 '"tag_name"' | cut -d '"' -f 4 || true)"
   sudo curl -fsSL "https://github.com/docker/buildx/releases/download/${VERSION}/buildx-${VERSION}.linux-${GOARCH}" \
     -o "$PLUGINS/docker-buildx"
   sudo chmod +x "$PLUGINS/docker-buildx"

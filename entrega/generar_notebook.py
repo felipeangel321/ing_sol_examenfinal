@@ -75,12 +75,14 @@ CAPAS = [
      "no copie las instrucciones (LLM08). `ejemplos_owasp.py` recorre OWASP 2026 sin llamar a Groq.",
      ["backend/seguridad/__init__.py", "backend/seguridad/guardrails.py", "backend/seguridad/boveda.py",
       "backend/seguridad/limitador.py", "backend/seguridad/cupos.py", "backend/seguridad/acceso.py",
-      "backend/seguridad/flujo.py", "backend/seguridad/ejemplos_owasp.py"]),
+      "backend/seguridad/flujo.py", "backend/seguridad/sesion.py", "backend/seguridad/ejemplos_owasp.py"]),
     ("Observabilidad y trazabilidad", "IE9, IE10",
      "Una traza JSON por pregunta con sus spans (filtros, cada llamada al modelo, cada herramienta), "
-     "tokens, latencia y reintentos; reporte de métricas y gráficos.",
+     "tokens, latencia y reintentos; reporte de métricas y gráficos. Opcional: LangSmith, con el "
+     "usuario de cada pregunta y también las preguntas bloqueadas.",
      ["backend/observabilidad/__init__.py", "backend/observabilidad/trazas.py",
-      "backend/observabilidad/reporte.py", "backend/observabilidad/graficos.py"]),
+      "backend/observabilidad/reporte.py", "backend/observabilidad/graficos.py",
+      "backend/observabilidad/envio_langsmith.py"]),
     ("Servicio, memoria persistente y API", "IE6, IE8",
      "`servicio.py` es el camino único de cada pregunta (filtros → seudonimización → agente → "
      "salida → traza) y la memoria en SQLite. La API (FastAPI) expone el chat, el estado de la "
@@ -88,6 +90,12 @@ CAPAS = [
      ["backend/servicio.py", "backend/chat.py", "backend/endpoints/__init__.py",
       "backend/endpoints/seguros.py", "backend/endpoints/panel.py", "backend/endpoints/api.py",
       "backend/app.py"]),
+    ("Microservicio de usuarios", "IE6, IE11",
+     "Servicio aparte (su propio contenedor y su propia base SQLite) para registrarse e iniciar "
+     "sesión. El correo no se repite (UNIQUE en la base), la contraseña se guarda como hash "
+     "scrypt y el inicio de sesión entrega un token firmado que la app verifica sin consultar "
+     "la base de usuarios. El chat pide sesión y el cupo diario se cuenta por cuenta.",
+     ["usuarios/*.py"]),
     ("Frontend: chat del cliente y panel de métricas", "IE8, IE9",
      "Páginas estáticas que sirve la misma API.",
      ["frontend/estilos.css", "frontend/index.html", "frontend/chat.js", "frontend/panel.html",
@@ -114,7 +122,8 @@ def archivos_de(patrones: list[str]) -> list[Path]:
 def revisar_cobertura() -> None:
     """Todo archivo de código del proyecto debe quedar en alguna capa."""
     incluidos = {p for *_, patrones in CAPAS for p in archivos_de(patrones)}
-    codigo = {p for p in [*RAIZ.glob("backend/**/*.py"), *RAIZ.glob("tests/*.py"), *RAIZ.glob("frontend/*.*")]
+    codigo = {p for p in [*RAIZ.glob("backend/**/*.py"), *RAIZ.glob("usuarios/*.py"), *RAIZ.glob("tests/*.py"),
+                          *RAIZ.glob("frontend/*.*")]
               if "__pycache__" not in p.parts and p.name != ".gitkeep"}
     faltan = sorted(str(p.relative_to(RAIZ)) for p in codigo - incluidos)
     if faltan:

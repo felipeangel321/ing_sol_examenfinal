@@ -26,6 +26,9 @@ SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 
 # 3) Código, frontend y pólizas.
 COPY backend ./backend
+# La app verifica los tokens del microservicio de usuarios (usuarios/tokens.py);
+# la base de usuarios NO entra aquí: vive en el contenedor usuarios.
+COPY usuarios ./usuarios
 COPY frontend ./frontend
 COPY corredores ./corredores
 

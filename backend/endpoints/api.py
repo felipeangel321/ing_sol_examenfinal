@@ -5,6 +5,8 @@ del curso (pasos 8 y 9) y sus pruebas funcionen igual contra este proyecto:
 
   GET  /api/health    {"status": "ok", "modo_demo": false}
   POST /api/chat      {"mensaje", "historial"?}  →  {"respuesta", "bloqueado", "motivo"}
+                      pide sesión (EXIGIR_LOGIN): cookie del navegador o
+                      "Authorization: Bearer <token>" de POST /usuarios/login; sin ella, 401.
                       un ataque responde 200 con "bloqueado": true y el motivo;
                       pasarse del límite por minuto (o del tope diario) responde 429.
   GET  /api/metrics   {"total_requests", "bloqueados", "errores"}: solo números.
@@ -35,6 +37,7 @@ from backend.catalogo import Catalogo, obtener_catalogo
 from backend.config import hay_groq
 from backend.endpoints.seguros import _ficha, _validar_id, obtener_asistente, revisar_limites
 from backend.seguridad.acceso import es_dueno
+from backend.seguridad.sesion import clave_de, es_corredor, exigir_usuario
 from backend.seguridad.guardrails import LARGO_MAXIMO
 from backend.servicio import Asistente
 
@@ -94,14 +97,16 @@ def chat(
     request: Request,
     catalogo: Catalogo = Depends(obtener_catalogo),
     asistente: Asistente = Depends(obtener_asistente),
+    usuario: dict | None = Depends(exigir_usuario),
 ):
     ficha = _ficha(CORREDOR, cuerpo.seguro or SEGURO, catalogo)
     conversacion = _validar_id(cuerpo.conversacion) if cuerpo.conversacion else uuid.uuid4().hex
     ip = request.client.host if request.client else "desconocida"
     try:
-        r = asistente.responder(ficha, conversacion, cuerpo.mensaje, clave_limite=ip,
+        r = asistente.responder(ficha, conversacion, cuerpo.mensaje, clave_limite=clave_de(usuario, ip),
                                 historial=[t.content for t in cuerpo.historial],
-                                dueno=es_dueno(request))
+                                dueno=es_dueno(request) or es_corredor(usuario),
+                                usuario=usuario["correo"] if usuario else None)
     except Exception:  # el detalle queda en la traza; al cliente, un texto genérico
         return ChatResponse(respuesta=ERROR, conversacion=conversacion)
     revisar_limites(r)

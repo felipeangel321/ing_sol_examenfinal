@@ -4,6 +4,7 @@
     /             chat del cliente   (frontend/index.html)
     /panel.html   dashboard de métricas (en el servidor, solo con el link /entrar?clave=...)
     /api/...      health, chat y metrics con el formato del deploy del curso (endpoints/api.py)
+    /usuarios/... registro, login y perfil (microservicio usuarios/; en local va incluido)
     /docs         documentación de la API
 """
 import logging
@@ -65,6 +66,15 @@ app.add_middleware(FrenoInundacion)
 app.include_router(seguros.router)
 app.include_router(panel.router)
 app.include_router(api.router)
+
+# Microservicio de usuarios: en el servidor corre en su propio contenedor y Caddy le manda
+# /usuarios/* (docker-compose fija USUARIOS_EMBEBIDO=false). En local se incluye aquí
+# mismo para no levantar dos procesos; el código y la base (data/usuarios.db) son los suyos.
+if os.getenv("USUARIOS_EMBEBIDO", "true").strip().lower() != "false":
+    from usuarios.app import asegurar_corredor_desde_entorno, router as usuarios_router
+
+    app.include_router(usuarios_router)
+    asegurar_corredor_desde_entorno()
 
 
 @app.get("/health")

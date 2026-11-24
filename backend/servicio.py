@@ -39,7 +39,7 @@ from backend.agentes.etapas import etapa_de
 from backend.catalogo import Ficha
 from backend.config import RAIZ
 from backend.herramientas.contexto import Contexto
-from backend.observabilidad import iniciar_traza, leer_trazas
+from backend.observabilidad import envio_langsmith, iniciar_traza, leer_trazas
 from backend.seguridad import (
     MENSAJES,
     Boveda,
@@ -183,18 +183,22 @@ class Asistente:
         return self._agentes[clave]
 
     def responder(self, ficha: Ficha, thread_id: str, pregunta: str, clave_limite: str | None = None,
-                  historial: list[str] | None = None, dueno: bool = False) -> Respuesta:
+                  historial: list[str] | None = None, dueno: bool = False,
+                  usuario: str | None = None) -> Respuesta:
         """clave_limite: a quién se le cuenta el límite por minuto y el cupo (la IP en la API).
 
         dueno: la pregunta viene del navegador del dueño (cookie del link secreto): usa su
         cupo reservado y su propio límite por minuto, aunque comparta IP con el público.
+
+        usuario: correo de la cuenta (microservicio de usuarios), solo como metadato para
+        LangSmith (observabilidad/envio_langsmith.py).
 
         historial: turnos anteriores que manda el cliente (/api/chat, formato del curso).
         Se validan, pero NO se le pasan al modelo: la memoria real es la del servidor.
         Así un turno "assistant" inventado por el cliente nunca llega al modelo."""
         self._contar(total_requests=1)
         try:
-            r = self._responder(ficha, thread_id, pregunta, clave_limite, historial or [], dueno)
+            r = self._responder(ficha, thread_id, pregunta, clave_limite, historial or [], dueno, usuario)
         except Exception:
             self._contar(errores=1)
             raise
@@ -203,7 +207,7 @@ class Asistente:
         return r
 
     def _responder(self, ficha: Ficha, thread_id: str, pregunta: str, clave_limite: str | None,
-                   historial: list[str], dueno: bool) -> Respuesta:
+                   historial: list[str], dueno: bool, usuario: str | None) -> Respuesta:
         quien = clave_limite or thread_id
         pregunta_segura = self.boveda.seudonimizar(thread_id, pregunta)
         categoria = donde = ""
@@ -238,9 +242,13 @@ class Asistente:
             else:
                 ocultos = [tipo for tipo, _ in buscar_pii(pregunta)]
                 traza.nuevo_span("seudonimizacion", "boveda").detalle["datos_ocultos"] = ocultos
+                # Metadatos y etiquetas para LangSmith (si está encendido; si no, se ignoran).
+                config = {**self._config(ficha, thread_id), "run_name": f"asistente {ficha.seguro}",
+                          "tags": [ficha.seguro],
+                          "metadata": envio_langsmith.metadatos(ficha, thread_id, traza.trace_id, usuario)}
                 resultado = self._agente(ficha).invoke(
                     {"messages": [{"role": "user", "content": pregunta_segura}]},
-                    self._config(ficha, thread_id),
+                    config,
                     context=Contexto(ficha, thread_id, self.boveda),
                 )
                 traza.etapa = etapa_de(resultado)
@@ -261,6 +269,10 @@ class Asistente:
                     limpio = MENSAJES[categoria]
                 traza.respuesta = limpio
                 texto = self.boveda.revelar(thread_id, limpio)
+        if categoria:  # el agente no lo vio: a LangSmith va como corrida "bloqueada"
+            envio_langsmith.registrar_bloqueo(
+                pregunta_segura, categoria, donde, traza.respuesta,
+                envio_langsmith.metadatos(ficha, thread_id, traza.trace_id, usuario))
         return Respuesta(
             texto=texto,
             trace_id=traza.trace_id,

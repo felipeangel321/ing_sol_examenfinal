@@ -4,7 +4,7 @@ const escapar = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<"
 const NOMBRES = {
   consulta: "Consulta", recopilando: "Recopilando datos", confirmando: "Esperando confirmación", registrada: "Registrada",
   modelo: "Modelo (Groq)", validacion_entrada: "Filtros de entrada", seudonimizacion: "Seudonimización", validacion_salida: "Revisión de salida",
-  injection: "Prompt injection", fraude: "Fraude al seguro", datos_terceros: "Datos de terceros", limite_tasa: "Límite por minuto", tope_diario: "Tope diario", cupo_ip: "Cupo por IP", espera_publico: "Espera del público", fuga_instrucciones: "Fuga de instrucciones",
+  injection: "Prompt injection", fraude: "Fraude al seguro", datos_terceros: "Datos de terceros", limite_tasa: "Límite por minuto", tope_diario: "Tope diario", cupo_ip: "Cupo por persona", espera_publico: "Espera del público", fuga_instrucciones: "Fuga de instrucciones",
   muy_larga: "Mensaje muy largo", vacia: "Mensaje vacío",
 };
 const nombre = (k) => NOMBRES[k] || k;

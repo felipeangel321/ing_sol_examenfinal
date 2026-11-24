@@ -1,4 +1,10 @@
 {
+	# Certificado por defecto cuando el navegador no dice a qué sitio va (SNI vacío),
+	# que es lo que pasa al entrar por IP. Fuera de Docker, Caddy lo elige por la IP
+	# local de la conexión; dentro de Docker esa IP es la de la red interna y el
+	# handshake fallaba ("tlsv1 alert internal error"). iniciar.sh escribe SITE_IP.
+	default_sni {$SITE_IP:localhost}
+
 	# Tiempos máximos para que un cliente mande su petición. Sin ellos, un atacante
 	# abre muchas conexiones y manda las cabeceras de a una letra (slowloris) hasta
 	# dejar al servidor sin conexiones libres. No hay tope para responder: el agente
@@ -19,12 +25,19 @@
 	# Caddy además redirige solo http:// -> https://.
 	tls internal
 
-	# Todo va a la app: ella misma sirve la API (/api/...), el chat (/) y el panel.
-	reverse_proxy app:8000 {
-		# Se SOBRESCRIBE X-Forwarded-For con la IP real de la conexión. La app cuenta
-		# límites y cupos por IP: si el cliente pudiera escribir esta cabecera, se
-		# saltaría los límites inventando una IP distinta en cada pedido.
-		header_up X-Forwarded-For {remote_host}
+	# /usuarios/* va al microservicio de usuarios; todo lo demás (chat, panel, /api/...) a la app.
+	# En ambos se SOBRESCRIBE X-Forwarded-For con la IP real de la conexión: los servicios
+	# cuentan límites por IP, y si el cliente pudiera escribir esta cabecera se saltaría
+	# los límites inventando una IP distinta en cada pedido.
+	handle /usuarios/* {
+		reverse_proxy usuarios:8001 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+	handle {
+		reverse_proxy app:8000 {
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 
 	# Un mensaje tiene como máximo 2.000 caracteres (y el historial de /api/chat, 20

@@ -48,6 +48,7 @@ uv run python entrega/tablas_informe.py                  # → docs/informe/tabl
 | `backend/seguridad/` | filtros de entrada (injection, fraude, datos de terceros) y de salida (fuga de instrucciones), bóveda de seudónimos, límite por minuto, `cupos.py` (público/dueño), `acceso.py` (link secreto `/entrar?clave=`, cookie HMAC), `flujo.py` (freno de inundación), `ejemplos_owasp.py` |
 | `backend/servicio.py` | camino único de cada pregunta: filtros → bóveda → agente → salida → traza; memoria SQLite |
 | `backend/observabilidad/` | trazas JSONL (`.trazas/`), reporte, gráficos |
+| `usuarios/` | microservicio de usuarios (contenedor y SQLite propios): registro (correo UNIQUE NOCASE), login con token JWT HS256 de stdlib (`tokens.py`), scrypt, límites; en local va embebido en la app (`USUARIOS_EMBEBIDO`) |
 | `backend/endpoints/`, `backend/app.py` | API FastAPI: chat, conversaciones, `/metricas`; `api.py` = `/api/health`, `/api/chat`, `/api/metrics` con el formato exacto del `deploy/` del curso (el profe ataca con un agente basado en su repo) |
 | `frontend/` | `index.html`+`chat.js` (chat) y `panel.html`+`panel.js` (dashboard); JS en archivos aparte por la CSP `script-src 'self'` |
 | `backend/evaluacion/` | `preguntas.yaml` (19 preguntas, respuestas esperadas = PROPUESTA) + `evaluar.py` |
@@ -75,6 +76,11 @@ uv run python entrega/tablas_informe.py                  # → docs/informe/tabl
   `deploy/iniciar.sh` (y el servicio systemd) la reescribe en `deploy/.env`. No hay Docker
   en el PC de Felipe: la imagen nunca se construyó en local, se construye en la EC2.
 - `uv sync` a secas quita el grupo `notebook` del .venv: usar `uv sync --group notebook`.
+- **Desplegado (2026-11-24)** en EC2 t3.medium (repo `felipeangel321/ing_sol_examenfinal`, público).
+  Lecciones: AL2023 trae buildx 0.12 y compose pide ≥0.17 (bootstrap lo actualiza); Caddy en
+  Docker por IP necesita `default_sni {$SITE_IP}` (sin SNI fallaba con "tlsv1 alert internal
+  error"); iniciar.sh escribe SITE_ADDRESS y SITE_IP.
+- **Login (2026-11-24, pedido del profe):** `EXIGIR_LOGIN` (true por defecto; `tests/conftest.py` lo apaga para las pruebas antiguas). Cupo y límite por minuto por cuenta (`sesion.clave_de`). Rol corredor = panel + cupo reservado; la cuenta la crea `iniciar.sh`.
 - **Referencia del profe para revisar:** `Desktop/Ing sol/Ingenier-a-de-Soluciones-con-Inteligencia-Artificial`
   (`RA3/IL3.5/`: guía AWS, checklist, mapa OWASP 2026; `deploy/`). Límite por minuto y tope
   diario responden **429**; el historial de `/api/chat` se valida pero no llega al modelo.

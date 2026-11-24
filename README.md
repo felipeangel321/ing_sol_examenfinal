@@ -51,6 +51,7 @@ Respuesta al cliente, citando documento y página
 | `backend/config.py` | Modelos y rutas (lee `.env`) |
 | `backend/endpoints/` | API: lista de seguros, chat, estado de la conversación, `/metricas`, y `/api/health`, `/api/chat`, `/api/metrics` con el formato del deploy del curso |
 | `backend/seguridad/` | Filtros de entrada y salida, bóveda de datos personales, límite por minuto, cupos público/dueño, link del dueño, freno de inundación y mapa OWASP 2026 ejecutable |
+| `usuarios/` | **Microservicio de usuarios**: registro, login (token firmado), perfil y roles; su propia base `usuarios.db` (el correo no se repite) |
 | `backend/almacen.py` | Solicitudes y derivaciones en SQLite (`data/seguros.db`, no se sube a git) |
 | `backend/servicio.py` | Camino único de cada pregunta: seguridad → agente → traza (lo usan el chat y la API); memoria en `data/` |
 | `frontend/` | Chat del cliente (`index.html` + `chat.js`) y panel de métricas (`panel.html` + `panel.js`), servidos por la API |
@@ -77,6 +78,7 @@ Respuesta al cliente, citando documento y página
 | Bandeja del corredor (`uv run python -m backend.bandeja`) | Lista |
 | Trazas y métricas (`backend.observabilidad.reporte`) | Listas |
 | Seguridad (filtros de entrada y salida, bóveda, límite por minuto, cupos, freno de inundación) | Lista; mapa en `docs/seguridad/mapa-owasp-2026.md` |
+| Microservicio de usuarios (`usuarios/`): el chat pide sesión; cupo por cuenta | Listo |
 | Despliegue en AWS Academy (`deploy/`) | Listo para desplegar; probado en local con Caddy y un modelo falso |
 | Memoria persistente (`data/conversaciones.db` + `data/boveda.db`, retención 30 días) | Lista; se retoma con `--conversacion` |
 | Etapas del caso y confirmación obligatoria antes de registrar | Lista |

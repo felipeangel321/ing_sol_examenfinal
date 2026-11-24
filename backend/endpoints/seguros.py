@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from backend.catalogo import Catalogo, Ficha, obtener_catalogo
 from backend.seguridad.acceso import es_dueno
+from backend.seguridad.sesion import clave_de, es_corredor, exigir_usuario
 from backend.servicio import Asistente, Respuesta
 
 router = APIRouter(prefix="/corredores/{corredor}/seguros", tags=["clientes"])
@@ -101,6 +102,7 @@ def chatear(
     request: Request,
     catalogo: Catalogo = Depends(obtener_catalogo),
     asistente: Asistente = Depends(obtener_asistente),
+    usuario: dict | None = Depends(exigir_usuario),
 ):
     # Función normal (no async): FastAPI la corre en otro hilo y el agente no bloquea al resto.
     ficha = _ficha(corredor, seguro, catalogo)
@@ -108,8 +110,9 @@ def chatear(
     # El límite por minuto se cuenta por IP: abrir conversaciones nuevas no lo evita.
     ip = request.client.host if request.client else "desconocida"
     try:
-        r = asistente.responder(ficha, conversacion, cuerpo.mensaje, clave_limite=ip,
-                                dueno=es_dueno(request))
+        r = asistente.responder(ficha, conversacion, cuerpo.mensaje, clave_limite=clave_de(usuario, ip),
+                                dueno=es_dueno(request) or es_corredor(usuario),
+                                usuario=usuario["correo"] if usuario else None)
     except Exception as error:  # Groq caído o cuota agotada tras los reintentos
         raise HTTPException(
             status_code=503,
@@ -137,6 +140,7 @@ def ver_conversacion(
     conversacion: str,
     catalogo: Catalogo = Depends(obtener_catalogo),
     asistente: Asistente = Depends(obtener_asistente),
+    _usuario: dict | None = Depends(exigir_usuario),
 ):
     """Para retomar la conversación al recargar la página."""
     ficha = _ficha(corredor, seguro, catalogo)

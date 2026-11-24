@@ -83,6 +83,7 @@ async function elegir(id) {
   if (!conversacion) return;
   try {  // retoma la conversación guardada en el servidor
     const r = await fetch(`/corredores/${CORREDOR}/seguros/${actual.id}/conversaciones/${conversacion}`);
+    if (r.status === 401) return pedirSesion("Tu sesión venció. Vuelve a ingresar.");
     if (!r.ok) throw new Error();
     const datos = await r.json();
     if (datos.mensajes.length) {
@@ -108,6 +109,7 @@ async function enviar(texto) {
     });
     const datos = await r.json();
     espera.remove();
+    if (r.status === 401) { pedirSesion("Tu sesión venció. Vuelve a ingresar."); return; }
     if (!r.ok) throw new Error(typeof datos.detail === "string" ? datos.detail : "No pude enviar el mensaje.");
     conversacion = datos.conversacion; guardar(claveConv(), conversacion);
     const meta = `traza ${datos.trace_id} · ${datos.duracion_s.toLocaleString("es-CL")} s · ${datos.tokens.toLocaleString("es-CL")} tokens · etapa ${datos.etapa}` +
@@ -132,7 +134,69 @@ $("detalles").onchange = (e) => { document.querySelectorAll(".meta").forEach((m)
 $("nueva").onclick = () => { guardar(claveConv(), null); elegir(actual.id); };
 $("detalles").checked = leer("detalles") === "1";
 
+// --- Sesión (microservicio de usuarios: /usuarios/...) ---------------------------------
+// La cookie de sesión es HttpOnly: este código no la ve; solo pregunta /usuarios/yo.
+let modo = "entrar";
+
+function pedirSesion(aviso = "") {
+  $("acceso").classList.remove("oculto");
+  document.querySelector(".app").classList.add("oculto");
+  ["usuario", "salir", "nueva"].forEach((id) => $(id).classList.add("oculto"));
+  $("acceso-error").textContent = aviso;
+  $("acceso-correo").focus();
+}
+
+function cambiarModo(nuevo) {
+  modo = nuevo;
+  $("tab-entrar").setAttribute("aria-selected", modo === "entrar");
+  $("tab-registro").setAttribute("aria-selected", modo === "registro");
+  $("campo-nombre").classList.toggle("oculto", modo !== "registro");
+  $("acceso-contrasena").autocomplete = modo === "registro" ? "new-password" : "current-password";
+  $("acceso-enviar").textContent = modo === "registro" ? "Crear cuenta" : "Iniciar sesión";
+  $("acceso-error").textContent = "";
+}
+
+const detalle = (datos, codigo) => typeof datos?.detail === "string" ? datos.detail
+  : codigo === 422 ? "Revisa los datos: un correo válido y una contraseña de al menos 8 caracteres."
+  : "No pude conectarme con el servidor.";
+
+async function postear(url, cuerpo) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+  const datos = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(detalle(datos, r.status));
+  return datos;
+}
+
+$("tab-entrar").onclick = () => cambiarModo("entrar");
+$("tab-registro").onclick = () => cambiarModo("registro");
+$("form-acceso").onsubmit = async (e) => {
+  e.preventDefault();
+  const correo = $("acceso-correo").value.trim(), contrasena = $("acceso-contrasena").value;
+  $("acceso-enviar").disabled = true; $("acceso-error").textContent = "";
+  try {
+    if (modo === "registro") await postear("/usuarios/registro", { correo, nombre: $("acceso-nombre").value.trim(), contrasena });
+    await postear("/usuarios/login", { correo, contrasena });
+    location.reload();
+  } catch (error) { $("acceso-error").textContent = error.message; }
+  finally { $("acceso-enviar").disabled = false; }
+};
+$("salir").onclick = async () => { await fetch("/usuarios/logout", { method: "POST" }).catch(() => {}); location.reload(); };
+
+async function revisarSesion() {
+  try {
+    const r = await fetch("/usuarios/yo");
+    if (r.status === 401) { pedirSesion(); return false; }
+    if (r.ok) {
+      const yo = await r.json();
+      $("usuario").textContent = yo.rol === "corredor" ? `${yo.nombre} (corredor)` : yo.nombre;
+      ["usuario", "salir"].forEach((id) => $(id).classList.remove("oculto"));
+    }
+  } catch {}  // sin servicio de usuarios (otra configuración): el chat sigue como antes
+  return true;
+}
+
 (async () => {
+  if (!(await revisarSesion())) return;
   try {
     const r = await fetch(`/corredores/${CORREDOR}/seguros`);
     if (!r.ok) throw new Error();

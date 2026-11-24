@@ -4,7 +4,8 @@ Problema: Groq gratuito da 200.000 tokens al día (~25 preguntas de este agente)
 URL pública, cualquiera (o un agente atacante) puede gastarlos con preguntas normales
 ("hola" × 25: no son un ataque, el filtro las deja pasar) y dejar la demo sin servicio.
 
-  Público ─ cupo chico: N por IP al día, M en total al día y como mucho 1 pregunta
+  Público ─ cupo chico: N por persona al día (por cuenta si hay sesión, si no por IP),
+            M en total al día y como mucho 1 pregunta
             cada X segundos sumando a todos (Groq: 8.000 tokens/min ≈ 1 pregunta/min).
   Dueño ─── cupo propio (link secreto, acceso.py) que el público no puede gastar.
 
@@ -52,7 +53,7 @@ class Cupos:
     def desde_entorno(cls) -> Cupos:
         return cls(
             publico_dia=_entero("CUPO_PUBLICO_DIA", 15),
-            por_ip_dia=_entero("CUPO_IP_DIA", 5),
+            por_ip_dia=_entero("CUPO_USUARIO_DIA", _entero("CUPO_IP_DIA", 5)),
             publico_cada_s=_entero("CUPO_PUBLICO_CADA_S", 120),
             dueno_dia=_entero("CUPO_DUENO_DIA", 10),
         )
