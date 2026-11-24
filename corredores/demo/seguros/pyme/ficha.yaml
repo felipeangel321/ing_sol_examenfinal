@@ -1,0 +1,18 @@
+nombre: Seguro Pyme Comercial
+descripcion: >-
+  Seguro para el local u oficina de una pyme: edificio y contenidos de uso comercial,
+  incendio y adicionales, robo, y un paquete de asistencias para el negocio.
+# PROPUESTA para la demo: confirmar con el corredor qué datos pide este seguro.
+campos_solicitud:
+  - {id: nombre, etiqueta: Nombre de quien solicita, obligatorio: true}
+  - {id: empresa, etiqueta: Razón social, obligatorio: true}
+  - {id: rut_empresa, etiqueta: RUT de la empresa, obligatorio: true, tipo: rut}
+  - {id: correo, etiqueta: Correo, obligatorio: true, tipo: correo}
+  - {id: telefono, etiqueta: Teléfono, tipo: telefono}
+  - {id: rubro, etiqueta: Rubro del negocio, obligatorio: true}
+  - {id: comuna, etiqueta: Comuna del local, obligatorio: true}
+documentos:
+  - archivo: pyme_comercial.pdf
+    titulo: Póliza Seguro Pyme (Misceláneo Comercial)
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 39

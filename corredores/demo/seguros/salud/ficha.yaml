@@ -1,0 +1,20 @@
+nombre: Seguro Complementario de Salud
+descripcion: >-
+  Seguro colectivo para empresas y sus trabajadores: reembolsa lo que no cubre Fonasa o
+  la isapre en prestaciones médicas, hospitalarias, medicamentos y dentales.
+# PROPUESTA para la demo: confirmar con el corredor qué datos pide este seguro.
+campos_solicitud:
+  - {id: nombre, etiqueta: Nombre completo, obligatorio: true}
+  - {id: rut, etiqueta: RUT, obligatorio: true, tipo: rut}
+  - {id: correo, etiqueta: Correo, obligatorio: true, tipo: correo}
+  - {id: telefono, etiqueta: Teléfono, tipo: telefono}
+  - {id: prevision, etiqueta: Previsión (Fonasa o isapre), obligatorio: true}
+  - {id: cargas, etiqueta: Número de cargas a incluir, tipo: numero}
+  - {id: empresa, etiqueta: Empresa (si es un seguro colectivo)}
+documentos:
+  # Todo el documento son condiciones particulares de un plan colectivo; las
+  # condiciones generales (POL 320220134) no vienen incluidas.
+  - archivo: complementario_salud.pdf
+    titulo: Póliza Colectiva Complementaria de Salud con cobertura dental
+    aseguradora: Compañía de Seguros de Vida Cámara
+    paginas_particulares: 33

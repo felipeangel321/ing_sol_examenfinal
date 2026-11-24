@@ -1,0 +1,26 @@
+nombre: Seguro de Vehículos
+descripcion: >-
+  Seguros para autos particulares y vehículos comerciales livianos: daños propios,
+  responsabilidad civil a terceros, robo, asistencias y accidentes personales de pasajeros.
+# PROPUESTA para la demo: confirmar con el corredor qué datos pide este seguro.
+# tipo valida el formato antes de registrar: texto, rut, correo, telefono, patente, numero.
+campos_solicitud:
+  - {id: nombre, etiqueta: Nombre completo, obligatorio: true}
+  - {id: rut, etiqueta: RUT, obligatorio: true, tipo: rut}
+  - {id: correo, etiqueta: Correo, obligatorio: true, tipo: correo}
+  - {id: telefono, etiqueta: Teléfono, tipo: telefono}
+  - {id: patente, etiqueta: Patente, obligatorio: true, tipo: patente}
+  - {id: marca_modelo, etiqueta: Marca y modelo, obligatorio: true}
+  - {id: anio, etiqueta: Año del vehículo, obligatorio: true, tipo: numero}
+  - {id: uso, etiqueta: Uso (particular o comercial)}
+# paginas_particulares: hasta qué página van las condiciones particulares (el plan de un
+# cliente puntual). Desde la siguiente vienen las condiciones generales y cláusulas.
+documentos:
+  - archivo: auto_particular.pdf
+    titulo: Póliza Auto Particular (plan Auto Full One Click)
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 17
+  - archivo: vehiculo_comercial.pdf
+    titulo: Póliza Vehículo Comercial Liviano (plan Classic Taller Sura)
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 17

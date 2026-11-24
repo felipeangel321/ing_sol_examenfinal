@@ -1,0 +1,19 @@
+nombre: Seguro de Hogar
+descripcion: >-
+  Protección de la vivienda y sus contenidos: incendio, sismo y riesgos de la naturaleza,
+  robo, cristales, daños por agua, responsabilidad civil familiar y asistencia hogar.
+# PROPUESTA para la demo: confirmar con el corredor qué datos pide este seguro.
+# tipo valida el formato antes de registrar: texto, rut, correo, telefono, patente, numero.
+campos_solicitud:
+  - {id: nombre, etiqueta: Nombre completo, obligatorio: true}
+  - {id: rut, etiqueta: RUT, obligatorio: true, tipo: rut}
+  - {id: correo, etiqueta: Correo, obligatorio: true, tipo: correo}
+  - {id: telefono, etiqueta: Teléfono, tipo: telefono}
+  - {id: comuna, etiqueta: Comuna de la vivienda, obligatorio: true}
+  - {id: tipo_vivienda, etiqueta: Tipo de vivienda (casa o departamento), obligatorio: true}
+  - {id: tenencia, etiqueta: Propietario o arrendatario}
+documentos:
+  - archivo: hogar.pdf
+    titulo: Póliza Seguro Hogar Pro (Protección Familiar)
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 14

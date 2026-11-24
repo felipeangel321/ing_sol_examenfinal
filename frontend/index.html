@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente de seguros</title>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  .app { display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 61px); }
+  .lateral { border-right: 1px solid var(--borde); padding: 16px; overflow-y: auto; background: var(--superficie); }
+  .lateral h2 { font-size: 13px; font-weight: 600; color: var(--tinta-2); margin: 4px 4px 10px; }
+  .seguro {
+    display: block; width: 100%; text-align: left; border: 1px solid transparent; background: none;
+    padding: 10px 12px; border-radius: 10px; cursor: pointer; margin-bottom: 4px;
+  }
+  .seguro:hover { background: var(--superficie-2); }
+  .seguro[aria-current="true"] { background: var(--acento-suave); border-color: var(--borde); }
+  .seguro strong { display: block; font-weight: 600; font-size: 14px; }
+  .seguro span { display: block; font-size: 12.5px; color: var(--tinta-2); line-height: 1.35; margin-top: 2px; }
+  .selector-movil { display: none; }
+
+  .principal { display: flex; flex-direction: column; min-height: 0; }
+  .cabecera { padding: 14px 20px 12px; border-bottom: 1px solid var(--borde); }
+  .cabecera h1 { font-size: 17px; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .numero {
+    font-size: 12.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    background: var(--superficie-2); border: 1px solid var(--borde); color: var(--bueno-texto);
+  }
+  .etapas { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+  .etapas li {
+    display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--tinta-suave);
+    padding: 3px 10px 3px 4px; border-radius: 999px; border: 1px solid var(--borde);
+  }
+  .etapas li b {
+    width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px;
+    background: var(--superficie-2); color: var(--tinta-2);
+  }
+  .etapas li.hecha { color: var(--tinta-2); }
+  .etapas li.hecha b { background: var(--acento-suave); color: var(--acento); }
+  .etapas li.actual { color: var(--tinta); border-color: var(--acento); font-weight: 600; }
+  .etapas li.actual b { background: var(--acento); color: var(--sobre-acento); }
+
+  .mensajes { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .bienvenida { max-width: 560px; margin: auto; text-align: center; color: var(--tinta-2); }
+  .bienvenida h2 { color: var(--tinta); font-size: 20px; margin-bottom: 6px; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+  .sugerencias button { font-size: 13.5px; }
+
+  .msg { max-width: min(680px, 88%); padding: 10px 14px; border-radius: 14px; word-wrap: break-word; }
+  .msg.cliente { align-self: flex-end; background: var(--cliente); color: #fff; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .msg.asistente { align-self: flex-start; background: var(--superficie); border: 1px solid var(--borde); border-bottom-left-radius: 4px; }
+  .msg.bloqueado { background: var(--aviso-fondo); }
+  .msg.error { border-color: var(--critico); }
+  .msg p { margin: 0 0 8px; } .msg p:last-child { margin-bottom: 0; }
+  .msg ul, .msg ol { margin: 4px 0 8px; padding-left: 20px; }
+  .tabla-msg { overflow-x: auto; margin: 6px 0 10px; }
+  .tabla-msg table { border-collapse: collapse; font-size: 13.5px; }
+  .tabla-msg th, .tabla-msg td { border: 1px solid var(--borde); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .tabla-msg th { background: var(--superficie-2); font-weight: 600; }
+  .meta { font-size: 11.5px; color: var(--tinta-suave); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .escribiendo { display: inline-flex; gap: 4px; }
+  .escribiendo i { width: 6px; height: 6px; border-radius: 50%; background: var(--tinta-suave); animation: salto 1.2s infinite; }
+  .escribiendo i:nth-child(2) { animation-delay: .15s; } .escribiendo i:nth-child(3) { animation-delay: .3s; }
+  @keyframes salto { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .escribiendo i { animation: none; } }
+
+  .entrada { border-top: 1px solid var(--borde); padding: 12px 20px 16px; background: var(--superficie); }
+  .entrada form { display: flex; gap: 8px; align-items: flex-end; max-width: 900px; margin: 0 auto; }
+  .entrada textarea {
+    flex: 1; resize: none; min-height: 44px; max-height: 160px; padding: 10px 12px;
+    border: 1px solid var(--borde); border-radius: 10px; background: var(--plano);
+  }
+  .pie { display: flex; justify-content: space-between; gap: 12px; max-width: 900px; margin: 8px auto 0; font-size: 12px; color: var(--tinta-suave); flex-wrap: wrap; }
+  .pie label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; height: calc(100vh - 57px); }
+    .lateral { display: none; }
+    .selector-movil { display: block; width: 100%; margin-bottom: 10px; padding: 8px; border-radius: 8px; border: 1px solid var(--borde); background: var(--plano); }
+    .barra, .cabecera, .mensajes, .entrada { padding-left: 16px; padding-right: 16px; }
+    .marca small { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="marca">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+    <div>Asistente de seguros<small>Resuelve dudas con las pólizas y prepara tu solicitud</small></div>
+  </div>
+  <nav class="enlaces">
+    <button class="boton" id="nueva" type="button">Nueva conversación</button>
+    <a class="boton" href="panel.html">Panel</a>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="lateral">
+    <h2>Elige un seguro</h2>
+    <div id="seguros"></div>
+  </aside>
+
+  <main class="principal">
+    <div class="cabecera">
+      <select class="selector-movil" id="selector" aria-label="Seguro"></select>
+      <h1><span id="titulo">Cargando…</span> <span class="numero oculto" id="numero"></span></h1>
+      <ol class="etapas" id="etapas" aria-label="Etapa de tu solicitud"></ol>
+    </div>
+    <div class="mensajes" id="mensajes" aria-live="polite"></div>
+    <div class="entrada">
+      <form id="formulario">
+        <textarea id="texto" rows="1" maxlength="2000" placeholder="Escribe tu pregunta…" aria-label="Mensaje"></textarea>
+        <button class="boton primario" id="enviar" type="submit">Enviar</button>
+      </form>
+      <div class="pie">
+        <span>Respuestas basadas en las pólizas de cada seguro. La decisión final siempre es de la aseguradora.</span>
+        <label><input type="checkbox" id="detalles"> Detalles técnicos</label>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="chat.js"></script>
+</body>
+</html>

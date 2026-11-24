@@ -1,0 +1,34 @@
+# Secretos: nunca subirlos
+.env
+credentials*.json
+*token*.json
+
+# Datos de clientes: los de seguros son sensibles
+data/
+
+# Las pólizas pueden traer datos personales: ningún PDF se sube, esté donde esté
+*.pdf
+
+# Documentos de corredores: no subirlos hasta aclarar sus permisos con el cliente
+corredores/**/documentos/*
+!corredores/**/documentos/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Índices de búsqueda: se generan solos desde los PDF
+.indices/
+
+# Trazas del agente: guardan las preguntas de los clientes
+.trazas/
+
+# Resultados de la evaluación: traen respuestas completas del agente
+.evaluaciones/
+
+# Notebook de entrega: copia de trabajo y pólizas comprimidas
+entrega/proyecto_seguros_nb/
+entrega/*.zip

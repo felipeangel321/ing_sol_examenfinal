@@ -1,0 +1,28 @@
+# Lo que NO entra a la imagen de Docker (el contexto de build es la raíz del repo).
+# Las pólizas de corredores/ SÍ entran: el agente las necesita para responder.
+
+# Secretos: la clave de Groq llega como variable de entorno, nunca dentro de la imagen
+.env
+**/.env
+credentials*.json
+*token*.json
+
+# Datos y resultados locales (en el servidor se generan de nuevo, en volúmenes)
+data/
+.trazas/
+.indices/
+.evaluaciones/
+
+# Entorno y cachés de Windows
+.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+.git/
+
+# Material de la entrega que el servidor no usa
+docs/
+entrega/
+tests/
+*.pdf
+CLAUDE.md

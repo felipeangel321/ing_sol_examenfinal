@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de métricas</title>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  .contenido { max-width: 1180px; margin: 0 auto; padding: 20px; }
+  .filtros { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filtros h1 { font-size: 20px; margin: 0 auto 0 0; }
+  .filtros select { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie); }
+  .filtros label { font-size: 13px; color: var(--tinta-2); display: inline-flex; gap: 6px; align-items: center; }
+  .actualizado { font-size: 12px; color: var(--tinta-suave); }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { padding: 14px 16px; }
+  .kpi .etiqueta { font-size: 13px; color: var(--tinta-2); }
+  .kpi .valor { font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 4px; }
+  .kpi .nota { font-size: 12px; color: var(--tinta-suave); margin-top: 2px; }
+  .kpi .estado { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--tinta-2); margin-top: 2px; }
+  .kpi .estado i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .ancho { grid-column: 1 / -1; }
+  .grafico { padding: 16px; min-width: 0; }
+  .grafico h2 { font-size: 15px; margin: 0; }
+  .grafico .sub { font-size: 12.5px; color: var(--tinta-2); margin: 2px 0 12px; }
+  .vacio { color: var(--tinta-suave); font-size: 13px; padding: 18px 0; }
+
+  /* Barras horizontales: nombre · barra · valor */
+  .barras { display: grid; grid-template-columns: minmax(90px, max-content) 1fr auto; gap: 8px 12px; align-items: center; }
+  .barras .nombre { font-size: 13px; color: var(--tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .barras .pista { height: 22px; display: flex; align-items: center; cursor: default; }
+  .barras .barra { height: 10px; background: var(--acento); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .barras .pista:hover .barra { filter: brightness(1.12); }
+  .barras .cifra { font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+
+  svg text { fill: var(--tinta-suave); font-size: 11px; font-family: var(--fuente); }
+  .linea-grilla { stroke: var(--grilla); stroke-width: 1; }
+  .linea-base { stroke: var(--eje); stroke-width: 1; }
+  .serie { fill: none; stroke: var(--acento); stroke-width: 2; stroke-linejoin: round; }
+  .punto { fill: var(--acento); stroke: var(--superficie); stroke-width: 2; }
+  .punto.reintento { fill: var(--superficie); stroke: var(--acento); stroke-width: 2; }
+  .referencia { stroke: var(--tinta-suave); stroke-width: 1; stroke-dasharray: 4 4; }
+  .cruz { stroke: var(--eje); stroke-width: 1; }
+  .leyenda { display: flex; gap: 14px; font-size: 12px; color: var(--tinta-2); margin-top: 8px; flex-wrap: wrap; }
+  .leyenda span { display: inline-flex; gap: 6px; align-items: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--borde); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--tinta-2); font-size: 12.5px; }
+  .tabla { overflow-x: auto; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 10; background: var(--superficie); color: var(--tinta);
+    border: 1px solid var(--borde); border-radius: 8px; padding: 8px 10px; font-size: 12.5px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .12); max-width: 260px; line-height: 1.45;
+  }
+  .tooltip b { font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 760px) {
+    .contenido { padding: 16px; }
+    .rejilla { grid-template-columns: 1fr; }
+    .kpi .valor { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="marca">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+    <div>Panel de métricas<small>Salud del agente a partir de las trazas (.trazas/)</small></div>
+  </div>
+  <nav class="enlaces"><a class="boton" href="./">Volver al chat</a></nav>
+</header>
+
+<main class="contenido">
+  <div class="filtros">
+    <h1>Resumen</h1>
+    <select id="seguro" aria-label="Filtrar por seguro"><option value="">Todos los seguros</option></select>
+    <label><input type="checkbox" id="auto" checked> Actualizar cada 15 s</label>
+    <button class="boton" id="actualizar" type="button">Actualizar</button>
+    <span class="actualizado" id="actualizado"></span>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Indicadores principales"></section>
+
+  <section class="rejilla">
+    <article class="tarjeta grafico ancho">
+      <h2>Latencia por pregunta</h2>
+      <p class="sub">Segundos desde que llega la pregunta hasta la respuesta, en orden de llegada.</p>
+      <div id="latencia"></div>
+      <div class="leyenda">
+        <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" class="punto"/></svg>Pregunta</span>
+        <span><svg width="14" height="14"><circle cx="7" cy="7" r="4" class="punto reintento"/></svg>Con reintentos por cuota de Groq (429)</span>
+        <span><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" class="referencia"/></svg>p95</span>
+      </div>
+    </article>
+    <article class="tarjeta grafico">
+      <h2>Embudo de solicitudes</h2>
+      <p class="sub">Conversaciones que llegaron a cada etapa del caso.</p>
+      <div id="embudo"></div>
+    </article>
+    <article class="tarjeta grafico">
+      <h2>Uso de herramientas</h2>
+      <p class="sub">Veces que el agente decidió usar cada herramienta.</p>
+      <div id="herramientas"></div>
+    </article>
+    <article class="tarjeta grafico">
+      <h2>Dónde se va el tiempo</h2>
+      <p class="sub">Segundos totales por etapa: lo más largo es lo primero que conviene optimizar.</p>
+      <div id="tiempo"></div>
+    </article>
+    <article class="tarjeta grafico">
+      <h2>Bloqueos de seguridad</h2>
+      <p class="sub">Preguntas detenidas antes de llegar al modelo, por motivo.</p>
+      <div id="bloqueos"></div>
+    </article>
+    <article class="tarjeta grafico ancho">
+      <h2>Por seguro</h2>
+      <p class="sub">Las mismas métricas separadas por agente.</p>
+      <div class="tabla" id="tabla"></div>
+    </article>
+  </section>
+</main>
+<div class="tooltip oculto" id="tooltip" role="tooltip"></div>
+
+<script src="panel.js"></script>
+</body>
+</html>

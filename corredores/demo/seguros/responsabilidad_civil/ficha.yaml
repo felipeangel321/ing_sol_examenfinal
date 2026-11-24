@@ -1,0 +1,22 @@
+nombre: Seguro de Responsabilidad Civil
+descripcion: >-
+  Cubre los daños que la empresa o institución cause a terceros en su actividad:
+  RC general, de empresa, patronal, de construcción y de propietarios de inmuebles.
+# PROPUESTA para la demo: confirmar con el corredor qué datos pide este seguro.
+campos_solicitud:
+  - {id: nombre, etiqueta: Nombre de quien solicita, obligatorio: true}
+  - {id: empresa, etiqueta: Razón social, obligatorio: true}
+  - {id: rut_empresa, etiqueta: RUT de la empresa, obligatorio: true, tipo: rut}
+  - {id: correo, etiqueta: Correo, obligatorio: true, tipo: correo}
+  - {id: telefono, etiqueta: Teléfono, tipo: telefono}
+  - {id: actividad, etiqueta: Actividad que se quiere cubrir, obligatorio: true}
+  - {id: trabajadores, etiqueta: Número de trabajadores, tipo: numero}
+documentos:
+  - archivo: rc_general.pdf
+    titulo: Póliza Responsabilidad Civil General
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 11
+  - archivo: rc_empresas.pdf
+    titulo: Póliza RC Empresas y Servicios (con asistencia legal y cibernética)
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 21

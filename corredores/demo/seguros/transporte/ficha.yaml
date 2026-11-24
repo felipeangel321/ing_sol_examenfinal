@@ -1,0 +1,18 @@
+nombre: Seguro de Transporte Terrestre
+descripcion: >-
+  Seguro de carga para transporte terrestre dentro de Chile (cabotaje): daños a la
+  mercadería transportada, materias excluidas, carga y descarga y aviso de siniestro.
+# PROPUESTA para la demo: confirmar con el corredor qué datos pide este seguro.
+campos_solicitud:
+  - {id: nombre, etiqueta: Nombre de quien solicita, obligatorio: true}
+  - {id: empresa, etiqueta: Razón social, obligatorio: true}
+  - {id: rut_empresa, etiqueta: RUT de la empresa, obligatorio: true, tipo: rut}
+  - {id: correo, etiqueta: Correo, obligatorio: true, tipo: correo}
+  - {id: telefono, etiqueta: Teléfono, tipo: telefono}
+  - {id: mercaderia, etiqueta: Tipo de mercadería, obligatorio: true}
+  - {id: rutas, etiqueta: Rutas habituales (origen y destino), obligatorio: true}
+documentos:
+  - archivo: transporte_terrestre.pdf
+    titulo: Póliza Transporte Terrestre Cabotaje
+    aseguradora: Seguros Generales Suramericana (Sura)
+    paginas_particulares: 13

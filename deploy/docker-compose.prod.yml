@@ -1,0 +1,63 @@
+# Despliegue mínimo: caddy (HTTPS) -> app (API + chat + panel).
+# Basado en deploy/ del repo del curso. Solo caddy publica puertos; la app queda
+# en la red interna y no se puede llamar directo desde Internet.
+#
+#   cd deploy && cp .env.example .env && nano .env
+#   sudo docker compose -f docker-compose.prod.yml up --build -d
+
+services:
+  app:
+    build:
+      context: ..            # la raíz del repo: necesita backend/, frontend/ y corredores/
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      # Única IP cuyo X-Forwarded-For se acepta: la de Caddy (fijada abajo).
+      FORWARDED_ALLOW_IPS: "172.28.0.10"
+      # /docs, /redoc y /openapi.json apagados en el servidor público.
+      ENABLE_DOCS: "${ENABLE_DOCS:-false}"
+      # Preguntas que pueden llegar a Groq en 24 h, sumando a todos los usuarios.
+      # Cuenta: cada pregunta gasta ~7.000 tokens (2-3 llamadas de ~2.200) y el plan
+      # gratuito da 200.000 por día -> ~28. Con 25 queda margen para la demo.
+      TOPE_DIARIO_PREGUNTAS: "${TOPE_DIARIO_PREGUNTAS:-25}"
+    expose: ["8000"]
+    volumes:
+      # Conversaciones, solicitudes y bóveda (SQLite) + trazas del panel:
+      # sobreviven a reinicios y a reconstruir la imagen.
+      - datos:/app/data
+      - trazas:/app/.trazas
+    deploy:
+      resources:
+        # torch + modelo de embeddings + índices: ~1,5 GB en uso. Por eso t3.medium (4 GB).
+        limits: { cpus: "1.5", memory: 2500M }
+    networks: [interna]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      SITE_ADDRESS: "${SITE_ADDRESS:-localhost}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+    networks:
+      interna:
+        # IP fija: la app necesita saber de qué origen exacto creerle X-Forwarded-For.
+        ipv4_address: 172.28.0.10
+
+networks:
+  interna:
+    # Si choca con otra red de la máquina o de la VPC, cámbiala aquí y en FORWARDED_ALLOW_IPS.
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  datos:
+  trazas:
+  caddy_data:
+  caddy_config:

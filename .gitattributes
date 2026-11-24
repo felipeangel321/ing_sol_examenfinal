@@ -1,0 +1,7 @@
+# Los scripts y archivos que corren en Linux (EC2) deben llegar con saltos de línea LF:
+# con CRLF de Windows, bash falla con "$'\r': command not found".
+*.sh text eol=lf
+deploy/Caddyfile text eol=lf
+deploy/Dockerfile text eol=lf
+deploy/*.yml text eol=lf
+deploy/.env.example text eol=lf

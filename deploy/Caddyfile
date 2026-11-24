@@ -1,0 +1,49 @@
+{
+	# Tiempos máximos para que un cliente mande su petición. Sin ellos, un atacante
+	# abre muchas conexiones y manda las cabeceras de a una letra (slowloris) hasta
+	# dejar al servidor sin conexiones libres. No hay tope para responder: el agente
+	# puede tardar más de un minuto en contestar una pregunta difícil.
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 15s
+			idle 2m
+		}
+	}
+}
+
+{$SITE_ADDRESS} {
+	# Certificado de la CA interna de Caddy (self-signed): HTTPS por IP, sin dominio,
+	# como en AWS Academy Learner Lab. El navegador muestra un aviso: es normal.
+	# Con un dominio real, borra esta línea y Caddy usa Let's Encrypt.
+	# Caddy además redirige solo http:// -> https://.
+	tls internal
+
+	# Todo va a la app: ella misma sirve la API (/api/...), el chat (/) y el panel.
+	reverse_proxy app:8000 {
+		# Se SOBRESCRIBE X-Forwarded-For con la IP real de la conexión. La app cuenta
+		# límites y cupos por IP: si el cliente pudiera escribir esta cabecera, se
+		# saltaría los límites inventando una IP distinta en cada pedido.
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	# Un mensaje tiene como máximo 2.000 caracteres (y el historial de /api/chat, 20
+	# turnos): un cuerpo más grande se rechaza aquí con 413, antes de llegar a la app.
+	request_body {
+		max_size 128KB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# CSP: el navegador solo ejecuta scripts servidos por este mismo sitio
+		# (frontend/chat.js y panel.js). Aunque se colara HTML del modelo, un <script>
+		# o un onclick inyectado no corre (segunda capa detrás de escapar el texto).
+		# 'unsafe-inline' solo para estilos: el panel dibuja barras con style="...".
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+}
